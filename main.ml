@@ -25,6 +25,13 @@ let read_line_semicolon () =
 
 let top_level_loop () =
   print_endline "Evaluator of lambda expressions...";
+
+  (*if (Array.length Sys.argv) == 1 then
+    let ic = open_in Sys.argv.(0)
+  else
+    if (Array.length Sys.argv) > 1 then
+      raise (Type_error "Invalid number of arguments");*)
+
   let rec loop ctx =
     print_string ">> ";
     flush stdout;
