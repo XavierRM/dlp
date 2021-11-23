@@ -1,6 +1,7 @@
 
 open Parsing;;
 open Lexing;;
+open String;;
 
 open Lambda;;
 open Parser;;
@@ -11,13 +12,16 @@ Section 1.1 of the Assigment:
   We read a line and check to see if it contains a semicolon if it does we return the result
   of concatenating all the lines if it doesn't we keep on checking
 *)
-(*let read_line_semicolon () =
+let read_line_semicolon () =
   let rec aux command =
     let line = read_line () in
-      match (index_opt (read_line ()) ";") with
-          Some pos -> (command ^ " " ^ (sub line 0 (pos-1)))
+      match (index_opt line ';') with
+          Some pos -> if (length line) != 1 then
+                        (command ^ " " ^ (sub line 0 pos))
+                      else
+                        command 
         | None -> aux (command ^ " " ^ line)
-  in aux "";;*)
+  in aux "";;
 
 let top_level_loop () =
   print_endline "Evaluator of lambda expressions...";
@@ -25,7 +29,7 @@ let top_level_loop () =
     print_string ">> ";
     flush stdout;
     try
-      let tm = s token (from_string (read_line ())) in
+      let tm = s token (from_string (read_line_semicolon ())) in
       let tyTm = typeof ctx tm in
       print_endline (string_of_term (eval tm) ^ " : " ^ string_of_ty tyTm);
       loop ctx
