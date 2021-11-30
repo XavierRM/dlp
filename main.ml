@@ -32,6 +32,8 @@ let top_level_loop () =
     if (Array.length Sys.argv) > 1 then
       raise (Type_error "Invalid number of arguments");*)
 
+  (*Tener en cuenta en loop el nuevo contexto de terminos tambien*)
+
   let rec loop ctx =
     print_string ">> ";
     flush stdout;

@@ -30,9 +30,18 @@
 %token <string> STRINGV
 
 %start s
+/*Ahora devuelve un comando en vez de un termino*/
 %type <Lambda.term> s
 
 %%
+
+/*
+s :
+    STRINGV EQ term EOF
+        { Bind ($1, $3) }
+    | term EOF
+        { Eval $1 }
+*/
 
 s :
     term EOF
