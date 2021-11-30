@@ -16,6 +16,7 @@
 %token LETREC
 %token IN
 %token BOOL
+%token STRING
 %token NAT
 
 %token LPAREN
@@ -52,6 +53,8 @@ term :
       { $1 }
   | IF term THEN term ELSE term
       { TmIf ($2, $4, $6) }
+  | CONCAT STRINGV STRINGV
+      { TmConcat ($2, $3) }
   | LAMBDA STRINGV COLON ty DOT term
       { TmAbs ($2, $4, $6) }
   | LET STRINGV EQ term IN term
@@ -99,4 +102,6 @@ atomicTy :
       { TyBool }
   | NAT
       { TyNat }
+  | STRING
+      { TyString }
 

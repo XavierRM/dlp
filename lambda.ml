@@ -4,6 +4,7 @@
 type ty =
     TyBool
   | TyNat
+  | TyString
   | TyArr of ty * ty
 ;;
 
@@ -16,6 +17,7 @@ type term =
   | TmFalse
   | TmIf of term * term * term
   | TmZero
+  | TmConcat of term * term
   | TmSucc of term
   | TmPred of term
   | TmIsZero of term
@@ -50,6 +52,8 @@ let rec string_of_ty ty = match ty with
       "Bool"
   | TyNat ->
       "Nat"
+  | TyString ->
+      "String"
   | TyArr (ty1, ty2) ->
       "(" ^ string_of_ty ty1 ^ ")" ^ " -> " ^ "(" ^ string_of_ty ty2 ^ ")"
 ;;
@@ -81,6 +85,16 @@ let rec typeof ctx tm = match tm with
     (* T-Zero *)
   | TmZero ->
       TyNat
+
+  | TmString s1 ->
+      TyString
+
+  | TmConcat (s1, s2) -> 
+      if (typeof ctx s1 = TyString) then
+        if (typeof ctx s2 = TyString) then
+          TyString 
+        else raise (Type_error "second argument of concat is not a string")
+      else raise (Type_error "first argument of concat is not a string") 
 
     (* T-Succ *)
   | TmSucc t1 ->
@@ -148,6 +162,11 @@ let rec string_of_term = function
       " else " ^ "(" ^ string_of_term t3 ^ ")"
   | TmZero ->
       "0"
+  | TmString s ->
+      s
+  | TmConcat (t1, t2) ->
+      "concat (" ^ string_of_term t1 ^ ", " ^ string_of_term t2 ^ ")"
+
   | TmSucc t ->
      let rec f n t' = match t' with
           TmZero -> string_of_int n
@@ -189,6 +208,10 @@ let rec free_vars tm = match tm with
       lunion (lunion (free_vars t1) (free_vars t2)) (free_vars t3)
   | TmZero ->
       []
+  | TmString ->
+      []
+  | TmConcat (t1, t2) ->
+      lunion (free_vars t1) (free_vars t2)
   | TmSucc t ->
       free_vars t
   | TmPred t ->
@@ -220,6 +243,10 @@ let rec subst x s tm = match tm with
       TmIf (subst x s t1, subst x s t2, subst x s t3)
   | TmZero ->
       TmZero
+  | TmString s ->
+      TmString s
+  | TmConcat (t1, t2) ->
+      TmConcat ((subst x s t1), (subst x s t2))
   | TmSucc t ->
       TmSucc (subst x s t)
   | TmPred t ->
@@ -341,6 +368,20 @@ let rec eval1 tm = match tm with
   | TmFix t1 ->
       let t1' = eval1 t1 in
       TmFix t1'
+
+    (*E-Concat: first argument is a term*)
+  | TmConcat (t1, t2) ->
+      let t1' = (eval1 t1) in
+      TmConcat(t1', t2)
+
+    (*E-Concat: second argument is a term*)
+  | TmConcat (t1, t2) ->
+      let t2' = (eval1 t2) in
+      TmConcat(t1, t2')
+  
+    (*E-Concat*)
+  | TmConcat (s1, s2) ->
+      s1 ^ s2
 
   | _ ->
       raise NoRuleApplies
