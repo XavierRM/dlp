@@ -17,6 +17,7 @@
 %token IN
 %token BOOL
 %token STRING
+%token CONCAT
 %token NAT
 
 %token LPAREN
@@ -28,6 +29,7 @@
 %token EOF
 
 %token <int> INTV
+%token <string> STRV
 %token <string> STRINGV
 
 %start s
@@ -53,7 +55,7 @@ term :
       { $1 }
   | IF term THEN term ELSE term
       { TmIf ($2, $4, $6) }
-  | CONCAT STRINGV STRINGV
+  | CONCAT term term
       { TmConcat ($2, $3) }
   | LAMBDA STRINGV COLON ty DOT term
       { TmAbs ($2, $4, $6) }
@@ -83,6 +85,10 @@ atomicTerm :
       { TmFalse }
   | STRINGV
       { TmVar $1 }
+  
+  | STRV
+      { TmString $1 }
+
   | INTV
       { let rec f = function
             0 -> TmZero

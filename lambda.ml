@@ -17,6 +17,7 @@ type term =
   | TmFalse
   | TmIf of term * term * term
   | TmZero
+  | TmString of string
   | TmConcat of term * term
   | TmSucc of term
   | TmPred of term
@@ -208,7 +209,7 @@ let rec free_vars tm = match tm with
       lunion (lunion (free_vars t1) (free_vars t2)) (free_vars t3)
   | TmZero ->
       []
-  | TmString ->
+  | TmString s1 ->
       []
   | TmConcat (t1, t2) ->
       lunion (free_vars t1) (free_vars t2)
@@ -381,7 +382,7 @@ let rec eval1 tm = match tm with
   
     (*E-Concat*)
   | TmConcat (s1, s2) ->
-      s1 ^ s2
+      TmString ((string_of_term s1) ^ (string_of_term s2))
 
   | _ ->
       raise NoRuleApplies
