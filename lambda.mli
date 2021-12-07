@@ -3,6 +3,7 @@ type ty =
     TyBool
   | TyNat
   | TyString
+  | TyPair of ty * ty
   | TyArr of ty * ty
 ;;
 
@@ -32,6 +33,7 @@ type term =
   | TmZero
   | TmString of string
   | TmConcat of term * term
+  | TmPair of term * term
   | TmSucc of term
   | TmPred of term
   | TmIsZero of term

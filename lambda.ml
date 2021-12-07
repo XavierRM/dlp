@@ -5,6 +5,7 @@ type ty =
     TyBool
   | TyNat
   | TyString
+  | TyPair of ty * ty
   | TyArr of ty * ty
 ;;
 
@@ -19,6 +20,7 @@ type term =
   | TmZero
   | TmString of string
   | TmConcat of term * term
+  | TmPair of term * term
   | TmSucc of term
   | TmPred of term
   | TmIsZero of term
@@ -55,6 +57,8 @@ let rec string_of_ty ty = match ty with
       "Nat"
   | TyString ->
       "String"
+  | TyPair (ty1, ty2) ->
+      "(" ^ string_of_ty ty1 ^ ")" ^ " X " ^ "(" ^ string_of_ty ty2 ^ ")"
   | TyArr (ty1, ty2) ->
       "(" ^ string_of_ty ty1 ^ ")" ^ " -> " ^ "(" ^ string_of_ty ty2 ^ ")"
 ;;
@@ -96,6 +100,10 @@ let rec typeof ctx tm = match tm with
           TyString 
         else raise (Type_error "second argument of concat is not a string")
       else raise (Type_error "first argument of concat is not a string") 
+
+    (*T-Pair*)
+  | TmPair (p1, p2) ->
+      TyPair ((typeof ctx p1), (typeof ctx p2))
 
     (* T-Succ *)
   | TmSucc t1 ->
@@ -167,7 +175,8 @@ let rec string_of_term = function
       s
   | TmConcat (t1, t2) ->
       "concat (" ^ string_of_term t1 ^ ", " ^ string_of_term t2 ^ ")"
-
+  | TmPair (p1, p2) -> 
+      "{" ^ string_of_term p1 ^ "," ^ string_of_term p2 ^ "}"
   | TmSucc t ->
      let rec f n t' = match t' with
           TmZero -> string_of_int n
@@ -213,6 +222,8 @@ let rec free_vars tm = match tm with
       []
   | TmConcat (t1, t2) ->
       lunion (free_vars t1) (free_vars t2)
+  | TmPair (p1, p2) ->
+      lunion (free_vars p1) (free_vars p2)
   | TmSucc t ->
       free_vars t
   | TmPred t ->
@@ -248,6 +259,8 @@ let rec subst x s tm = match tm with
       TmString s
   | TmConcat (t1, t2) ->
       TmConcat ((subst x s t1), (subst x s t2))
+  | TmPair (p1, p2) ->
+      TmPair (subst x s p1, subst x s p2)
   | TmSucc t ->
       TmSucc (subst x s t)
   | TmPred t ->
@@ -384,6 +397,15 @@ let rec eval1 tm = match tm with
   | TmConcat (s1, s2) ->
       TmString ((string_of_term s1) ^ (string_of_term s2))
 
+    (*E-Pair1*)
+  | TmPair (t1, v2) -> 
+      let t1' = eval1 t1 in
+        TmPair (t1', v2)
+    
+    (*E-Pair2*)
+  | TmPair (v1, t2) -> 
+      let t2' = eval1 t2 in
+        TmPair (v1, t2')
   | _ ->
       raise NoRuleApplies
 ;;

@@ -22,6 +22,9 @@
 
 %token LPAREN
 %token RPAREN
+%token LBRACKET
+%token RBRACKET
+%token COMMA
 %token DOT
 %token EQ
 %token COLON
@@ -57,6 +60,12 @@ term :
       { TmIf ($2, $4, $6) }
   | CONCAT term term
       { TmConcat ($2, $3) }
+  | LBRACKET term COMMA term RBRACKET
+      { TmPair ($2, $4) }
+  | LBRACKET term COMMA term RBRACKET DOT "1"
+      { $2 }
+  | LBRACKET term COMMA term RBRACKET DOT "2"
+      { $4 }
   | LAMBDA STRINGV COLON ty DOT term
       { TmAbs ($2, $4, $6) }
   | LET STRINGV EQ term IN term
@@ -85,10 +94,8 @@ atomicTerm :
       { TmFalse }
   | STRINGV
       { TmVar $1 }
-  
   | STRV
       { TmString $1 }
-
   | INTV
       { let rec f = function
             0 -> TmZero

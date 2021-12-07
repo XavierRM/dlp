@@ -25,6 +25,9 @@ rule token = parse
   | "Nat"       { NAT }
   | '('         { LPAREN }
   | ')'         { RPAREN }
+  | '{'         { LBRACKET }
+  | '}'         { RBRACKET }
+  | ','         { COMMA }
   | '.'         { DOT }
   | '='         { EQ }
   | ':'         { COLON }
