@@ -21,6 +21,7 @@ type term =
   | TmString of string
   | TmConcat of term * term
   | TmPair of term * term
+  | TmBind of string * term
   | TmSucc of term
   | TmPred of term
   | TmIsZero of term
@@ -31,6 +32,12 @@ type term =
   | TmFix of term
 ;;
 
+(* AUXILIAR OPERATIONS*)
+
+let rec assoc x = function
+  [] -> raise Not_found
+  | (a,b,c)::l -> if compare a x = 0 then (b, c) else assoc x l
+;;
 
 (* CONTEXT MANAGEMENT *)
 
@@ -38,12 +45,12 @@ let emptyctx =
   []
 ;;
 
-let addbinding ctx x bind =
-  (x, bind) :: ctx
+let addbinding ctx x bind termopt =
+  (x, bind, termopt) :: ctx
 ;;
 
 let getbinding ctx x =
-  List.assoc x ctx
+  assoc x ctx
 ;;
 
 
@@ -105,6 +112,9 @@ let rec typeof ctx tm = match tm with
   | TmPair (p1, p2) ->
       TyPair ((typeof ctx p1), (typeof ctx p2))
 
+  | TmBind (s, t) ->
+      let ctx' = addbinding ctx s (typeof ctx t) (Some t) in (typeof ctx' t) 
+
     (* T-Succ *)
   | TmSucc t1 ->
       if typeof ctx t1 = TyNat then TyNat
@@ -122,12 +132,12 @@ let rec typeof ctx tm = match tm with
 
     (* T-Var *)
   | TmVar x ->
-      (try getbinding ctx x with
+      (try fst (getbinding ctx x) with
        _ -> raise (Type_error ("no binding type for variable " ^ x)))
 
     (* T-Abs *)
   | TmAbs (x, tyT1, t2) ->
-      let ctx' = addbinding ctx x tyT1 in
+      let ctx' = addbinding ctx x tyT1 None in
       let tyT2 = typeof ctx' t2 in
       TyArr (tyT1, tyT2)
 
@@ -144,7 +154,7 @@ let rec typeof ctx tm = match tm with
     (* T-Let *)
   | TmLetIn (x, t1, t2) ->
       let tyT1 = typeof ctx t1 in
-      let ctx' = addbinding ctx x tyT1 in
+      let ctx' = addbinding ctx x tyT1 None in
       typeof ctx' t2
   
     (*T-Fix*)
@@ -177,6 +187,8 @@ let rec string_of_term = function
       "concat (" ^ string_of_term t1 ^ ", " ^ string_of_term t2 ^ ")"
   | TmPair (p1, p2) -> 
       "{" ^ string_of_term p1 ^ "," ^ string_of_term p2 ^ "}"
+  | TmBind (s, t) ->
+      s ^ " = " ^ string_of_term t
   | TmSucc t ->
      let rec f n t' = match t' with
           TmZero -> string_of_int n
@@ -224,6 +236,8 @@ let rec free_vars tm = match tm with
       lunion (free_vars t1) (free_vars t2)
   | TmPair (p1, p2) ->
       lunion (free_vars p1) (free_vars p2)
+  |TmBind (s, t) ->
+      free_vars t
   | TmSucc t ->
       free_vars t
   | TmPred t ->
@@ -255,12 +269,14 @@ let rec subst x s tm = match tm with
       TmIf (subst x s t1, subst x s t2, subst x s t3)
   | TmZero ->
       TmZero
-  | TmString s ->
-      TmString s
+  | TmString s1 ->
+      TmString s1
   | TmConcat (t1, t2) ->
       TmConcat ((subst x s t1), (subst x s t2))
   | TmPair (p1, p2) ->
       TmPair (subst x s p1, subst x s p2)
+  | TmBind (name, t) ->
+      TmBind (name, (subst x s t))
   | TmSucc t ->
       TmSucc (subst x s t)
   | TmPred t ->
@@ -416,5 +432,11 @@ let rec eval tm =
     eval tm'
   with
     NoRuleApplies -> tm
+;;
+
+let execute ctx command = match command with
+    Eval t -> eval t;
+              ctx
+  | Bind (s, t) -> addbinding ctx s (typeof t) t
 ;;
 
