@@ -58,7 +58,7 @@ let rec string_of_ty ty = match ty with
   | TyString ->
       "String"
   | TyPair (ty1, ty2) ->
-      "(" ^ string_of_ty ty1 ^ ")" ^ " X " ^ "(" ^ string_of_ty ty2 ^ ")"
+      "(" ^ string_of_ty ty1 ^ ")" ^ " x " ^ "(" ^ string_of_ty ty2 ^ ")"
   | TyArr (ty1, ty2) ->
       "(" ^ string_of_ty ty1 ^ ")" ^ " -> " ^ "(" ^ string_of_ty ty2 ^ ")"
 ;;
