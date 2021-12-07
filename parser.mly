@@ -58,8 +58,8 @@ term :
       { $1 }
   | IF term THEN term ELSE term
       { TmIf ($2, $4, $6) }
-  | CONCAT term term
-      { TmConcat ($2, $3) }
+  | CONCAT term COMMA term
+      { TmConcat ($2, $4) }
   | LBRACKET term COMMA term RBRACKET
       { TmPair ($2, $4) }
   | LBRACKET term COMMA term RBRACKET DOT "1"

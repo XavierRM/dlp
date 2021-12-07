@@ -382,7 +382,7 @@ let rec eval1 tm = match tm with
   | TmFix t1 ->
       let t1' = eval1 t1 in
       TmFix t1'
-
+  (*
     (*E-Concat: first argument is a term*)
   | TmConcat (t1, t2) ->
       let t1' = (eval1 t1) in
@@ -392,7 +392,7 @@ let rec eval1 tm = match tm with
   | TmConcat (t1, t2) ->
       let t2' = (eval1 t2) in
       TmConcat(t1, t2')
-  
+  *)  
     (*E-Concat*)
   | TmConcat (s1, s2) ->
       TmString ((string_of_term s1) ^ (string_of_term s2))

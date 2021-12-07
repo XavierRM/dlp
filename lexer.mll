@@ -35,7 +35,7 @@ rule token = parse
   | ['0'-'9']+  { INTV (int_of_string (Lexing.lexeme lexbuf)) }
   | ['a'-'z']['a'-'z' '_' '0'-'9']*
                 { STRINGV (Lexing.lexeme lexbuf) }
-  | '"' [^ '"' ';' '\n']* '"' { STRV (String.sub (Lexing.lexeme lexbuf) 1 (String.length (Lexing.lexeme lexbuf))-1)}
+  | '"' [^ '"' ';' '\n']* '"' { STRV (String.sub (Lexing.lexeme lexbuf) 1 ((String.length (Lexing.lexeme lexbuf))-2))}
   | eof         { EOF }
   | _           { raise Lexical_error } 
 
