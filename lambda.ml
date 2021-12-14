@@ -9,10 +9,6 @@ type ty =
   | TyArr of ty * ty
 ;;
 
-type context =
-  (string * ty) list
-;;
-
 type term =
     TmTrue
   | TmFalse
@@ -31,6 +27,14 @@ type term =
   | TmLetIn of string * term * term
   | TmFix of term
 ;;
+
+type context =
+  (string * ty * term option) list
+;;
+
+type command =
+  Eval of term
+| Bind of string * term;;
 
 (* AUXILIAR OPERATIONS*)
 
@@ -181,6 +185,7 @@ let rec string_of_term = function
       " else " ^ "(" ^ string_of_term t3 ^ ")"
   | TmZero ->
       "0"
+      (*Añadir las comillas*)
   | TmString s ->
       s
   | TmConcat (t1, t2) ->
@@ -314,6 +319,7 @@ let rec isnumericval tm = match tm with
 let rec isval tm = match tm with
     TmTrue  -> true
   | TmFalse -> true
+  | TmString _ -> true
   | TmAbs _ -> true
   | t when isnumericval t -> true
   | _ -> false
@@ -398,7 +404,11 @@ let rec eval1 tm = match tm with
   | TmFix t1 ->
       let t1' = eval1 t1 in
       TmFix t1'
-  (*
+  
+    (*E-Concat*)
+  | TmConcat (s1, s2) ->
+      TmString ((string_of_term s1) ^ (string_of_term s2))
+      (*
     (*E-Concat: first argument is a term*)
   | TmConcat (t1, t2) ->
       let t1' = (eval1 t1) in
@@ -408,20 +418,18 @@ let rec eval1 tm = match tm with
   | TmConcat (t1, t2) ->
       let t2' = (eval1 t2) in
       TmConcat(t1, t2')
-  *)  
-    (*E-Concat*)
-  | TmConcat (s1, s2) ->
-      TmString ((string_of_term s1) ^ (string_of_term s2))
+  *) 
+
+    (*E-Pair2*)
+  | TmPair (v1, t2) when isval v1 -> 
+    let t2' = eval1 t2 in
+      TmPair (v1, t2')
 
     (*E-Pair1*)
   | TmPair (t1, v2) -> 
       let t1' = eval1 t1 in
         TmPair (t1', v2)
     
-    (*E-Pair2*)
-  | TmPair (v1, t2) -> 
-      let t2' = eval1 t2 in
-        TmPair (v1, t2')
   | _ ->
       raise NoRuleApplies
 ;;
@@ -437,6 +445,5 @@ let rec eval tm =
 let execute ctx command = match command with
     Eval t -> eval t;
               ctx
-  | Bind (s, t) -> addbinding ctx s (typeof t) t
+  | Bind (s, t) -> addbinding ctx s (typeof ctx t) Some t
 ;;
-

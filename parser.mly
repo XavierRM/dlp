@@ -66,6 +66,7 @@ term :
       { $2 }
   | LBRACKET term COMMA term RBRACKET DOT "2"
       { $4 }
+    /*NO tiene en cuenta variables y funciones, cambiar esto a un nuevo Tm*/
   | STRINGV EQ term
       { TmBind ($1, $3) }
   | LAMBDA STRINGV COLON ty DOT term
