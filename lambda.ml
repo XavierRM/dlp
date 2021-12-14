@@ -17,6 +17,7 @@ type term =
   | TmString of string
   | TmConcat of term * term
   | TmPair of term * term
+  | TmProj of term * term * string
   | TmBind of string * term
   | TmSucc of term
   | TmPred of term
@@ -49,12 +50,20 @@ let emptyctx =
   []
 ;;
 
-let addbinding ctx x bind termopt =
+let addtbinding ctx x bind =
+  (x, bind, None) :: ctx
+;;
+
+let gettbinding ctx x =
+  fst (assoc x ctx)
+;;
+
+let addvbinding ctx x bind termopt =
   (x, bind, termopt) :: ctx
 ;;
 
-let getbinding ctx x =
-  assoc x ctx
+let getvbinding ctx x =
+  snd (assoc x ctx)
 ;;
 
 
@@ -115,9 +124,16 @@ let rec typeof ctx tm = match tm with
     (*T-Pair*)
   | TmPair (p1, p2) ->
       TyPair ((typeof ctx p1), (typeof ctx p2))
+  
+    (*T-Proj*)
+  | TmProj (t1, t2, pos) ->
+      if (pos == "1") then
+        (typeof ctx t1)
+      else
+        (typeof ctx t2) 
 
   | TmBind (s, t) ->
-      let ctx' = addbinding ctx s (typeof ctx t) (Some t) in (typeof ctx' t) 
+      let ctx' = addvbinding ctx s (typeof ctx t) (Some t) in (typeof ctx' t) 
 
     (* T-Succ *)
   | TmSucc t1 ->
@@ -136,12 +152,12 @@ let rec typeof ctx tm = match tm with
 
     (* T-Var *)
   | TmVar x ->
-      (try fst (getbinding ctx x) with
+      (try (gettbinding ctx x) with
        _ -> raise (Type_error ("no binding type for variable " ^ x)))
 
     (* T-Abs *)
   | TmAbs (x, tyT1, t2) ->
-      let ctx' = addbinding ctx x tyT1 None in
+      let ctx' = addtbinding ctx x tyT1 in
       let tyT2 = typeof ctx' t2 in
       TyArr (tyT1, tyT2)
 
@@ -158,7 +174,7 @@ let rec typeof ctx tm = match tm with
     (* T-Let *)
   | TmLetIn (x, t1, t2) ->
       let tyT1 = typeof ctx t1 in
-      let ctx' = addbinding ctx x tyT1 None in
+      let ctx' = addtbinding ctx x tyT1 in
       typeof ctx' t2
   
     (*T-Fix*)
@@ -187,11 +203,13 @@ let rec string_of_term = function
       "0"
       (*Añadir las comillas*)
   | TmString s ->
-      s
+      "\"" ^ s ^ "\""
   | TmConcat (t1, t2) ->
       "concat (" ^ string_of_term t1 ^ ", " ^ string_of_term t2 ^ ")"
   | TmPair (p1, p2) -> 
       "{" ^ string_of_term p1 ^ "," ^ string_of_term p2 ^ "}"
+  | TmProj (t1, t2, pos) -> 
+      "{" ^ string_of_term t1 ^ "," ^ string_of_term t2 ^ "}." ^ pos
   | TmBind (s, t) ->
       s ^ " = " ^ string_of_term t
   | TmSucc t ->
@@ -241,6 +259,8 @@ let rec free_vars tm = match tm with
       lunion (free_vars t1) (free_vars t2)
   | TmPair (p1, p2) ->
       lunion (free_vars p1) (free_vars p2)
+  | TmProj (t1, t2, pos) ->
+      lunion (free_vars t1) (free_vars t2)
   |TmBind (s, t) ->
       free_vars t
   | TmSucc t ->
@@ -280,6 +300,8 @@ let rec subst x s tm = match tm with
       TmConcat ((subst x s t1), (subst x s t2))
   | TmPair (p1, p2) ->
       TmPair (subst x s p1, subst x s p2)
+  | TmProj (t1, t2, pos) ->
+      TmProj (subst x s t1, subst x s t2, pos)
   | TmBind (name, t) ->
       TmBind (name, (subst x s t))
   | TmSucc t ->
@@ -406,19 +428,31 @@ let rec eval1 tm = match tm with
       TmFix t1'
   
     (*E-Concat*)
-  | TmConcat (s1, s2) ->
+  | TmConcat (s1, s2) when (isval s1) && (isval s2) ->
       TmString ((string_of_term s1) ^ (string_of_term s2))
-      (*
+
     (*E-Concat: first argument is a term*)
-  | TmConcat (t1, t2) ->
+  | TmConcat (t1, t2) when isval t2->
       let t1' = (eval1 t1) in
       TmConcat(t1', t2)
 
     (*E-Concat: second argument is a term*)
-  | TmConcat (t1, t2) ->
+  | TmConcat (t1, t2) when isval t1->
       let t2' = (eval1 t2) in
       TmConcat(t1, t2')
-  *) 
+
+  | TmConcat (t1, t2) ->
+      let t1' = (eval1 t1) in
+      TmConcat(t1', t2)
+
+    (*E-Proj1*)
+  | TmProj(t1, t2, pos) ->
+      let t1' = (eval1 t1) in
+      let t2' = (eval1 t2) in
+        if (pos == "1") then
+          t1'
+        else
+          t2'
 
     (*E-Pair2*)
   | TmPair (v1, t2) when isval v1 -> 
@@ -443,7 +477,10 @@ let rec eval tm =
 ;;
 
 let execute ctx command = match command with
-    Eval t -> eval t;
-              ctx
-  | Bind (s, t) -> addbinding ctx s (typeof ctx t) Some t
+    Eval t -> 
+              let tyTm = typeof ctx t in
+              let tm = eval t in
+              print_endline (string_of_term tm ^ " : " ^ string_of_ty tyTm);
+              addtbinding ctx (string_of_term t) tyTm
+  | Bind (s, t) -> addvbinding ctx s (typeof ctx t) (Some t)
 ;;

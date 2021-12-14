@@ -26,6 +26,7 @@ type term =
   | TmString of string
   | TmConcat of term * term
   | TmPair of term * term
+  | TmProj of term * term * string
   | TmBind of string * term
   | TmSucc of term
   | TmPred of term
@@ -47,8 +48,10 @@ type command =
 
 
 val emptyctx : context;;
-val addbinding : context -> string -> ty -> term option -> context;;
-val getbinding : context -> string -> ty -> term option;;
+val addtbinding : context -> string -> ty -> context;;
+val gettbinding : context -> string -> ty;;
+val addvbinding : context -> string -> ty -> term option -> context;;
+val getvbinding : context -> string -> term option;;
 
 (*Añadir las operaciones para coger el tipo y para coger el valor*)
 
