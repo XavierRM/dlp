@@ -19,5 +19,14 @@ let fix = lambda f.(lambda x. f (lambda y. x x y)) (lambda x. f (lambda y. x x y
 let id_string = L x:String. x in id_string "hola"
 let pair_string = {"par", "par"} in pair_string;
 
+letrec mult: Nat -> Nat -> Nat =  
+  lambda n : Nat. lambda m : Nat.  letrec sum: Nat -> Nat -> Nat = 
+    lambda j : Nat. lambda k : Nat. if iszero j then k else succ (sum (pred j) k) 
+  in if iszero n then 0 else if iszero (pred n) then m else sum m (mult (pred n) m) 
+in mult 3 6;
 
-letrec fib: Nat -> Nat = lambda n : Nat. letrec sum: Nat -> Nat -> Nat = lambda j : Nat. lambda k : Nat. if iszero j then k else succ (sum (pred j) k) in if iszero n then 0 else if iszero (pred n) then n else sum (fib (pred n)) (fib (pred (pred n))) in fib 1;
+letrec fib: Nat -> Nat = 
+  lambda n : Nat. letrec sum: Nat -> Nat -> Nat = 
+    lambda j : Nat. lambda k : Nat. if iszero j then k else succ (sum (pred j) k) 
+  in if iszero n then 0 else if iszero (pred n) then n else sum (fib (pred n)) (fib (pred (pred n))) 
+in fib 1;
