@@ -18,3 +18,15 @@ let fix = lambda f.(lambda x. f (lambda y. x x y)) (lambda x. f (lambda y. x x y
 let fix = lambda f.(lambda x. f (lambda y. x x y)) (lambda x. f (lambda y. x x y)) in let sumaux = lambda f. (lambda n. (lambda m. if (iszero n) then m else succ (f (pred n) m))) in let sum = fix sumaux in let prodaux = lambda f. (lambda n. (lambda m. if (iszero (pred n)) then m else sum (f (pred n) m) m)) in let prod = fix prodaux in prod 12 5
 let id_string = L x:String. x in id_string "hola"
 let pair_string = {"par", "par"} in pair_string;
+
+letrec mult: Nat -> Nat -> Nat =  
+  lambda n : Nat. lambda m : Nat.  letrec sum: Nat -> Nat -> Nat = 
+    lambda j : Nat. lambda k : Nat. if iszero j then k else succ (sum (pred j) k) 
+  in if iszero n then 0 else if iszero (pred n) then m else sum m (mult (pred n) m) 
+in mult 3 6;
+
+letrec fib: Nat -> Nat = 
+  lambda n : Nat. letrec sum: Nat -> Nat -> Nat = 
+    lambda j : Nat. lambda k : Nat. if iszero j then k else succ (sum (pred j) k) 
+  in if iszero n then 0 else if iszero (pred n) then n else sum (fib (pred n)) (fib (pred (pred n))) 
+in fib 1;
