@@ -40,10 +40,12 @@ let top_level_loop () =
     try
       let tm = s token (from_string (read_line_semicolon ())) in
       let tyTm = match tm with
-                Eval t -> typeof ctx t
+                  Eval t -> typeof ctx t
                 | Bind (s, t) -> typeof ctx t
       in
-      print_endline (string_of_term (execute ctx tm) ^ " : " ^ string_of_ty tyTm);
+      match tm with
+          Eval t -> print_endline (string_of_term (eval t) ^ " : " ^ string_of_ty tyTm);
+        | Bind (s, t) -> print_endline (string_of_term (eval t) ^ " : " ^ string_of_ty tyTm);
       loop (execute ctx tm)
     with
        Lexical_error ->
