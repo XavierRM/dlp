@@ -350,7 +350,7 @@ let rec isval tm = match tm with
 exception NoRuleApplies
 ;;
 
-let rec eval1 tm = match tm with
+let rec eval1 tm ctx = match tm with
     (* E-IfTrue *)
     TmIf (TmTrue, t2, _) ->
       t2
@@ -361,12 +361,12 @@ let rec eval1 tm = match tm with
 
     (* E-If *)
   | TmIf (t1, t2, t3) ->
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
       TmIf (t1', t2, t3)
 
     (* E-Succ *)
   | TmSucc t1 ->
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
       TmSucc t1'
 
     (* E-PredZero *)
@@ -379,7 +379,7 @@ let rec eval1 tm = match tm with
 
     (* E-Pred *)
   | TmPred t1 ->
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
       TmPred t1'
 
     (* E-IszeroZero *)
@@ -392,7 +392,7 @@ let rec eval1 tm = match tm with
 
     (* E-Iszero *)
   | TmIsZero t1 ->
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
       TmIsZero t1'
 
     (* E-AppAbs *)
@@ -401,12 +401,12 @@ let rec eval1 tm = match tm with
 
     (* E-App2: evaluate argument before applying function *)
   | TmApp (v1, t2) when isval v1 ->
-      let t2' = eval1 t2 in
+      let t2' = eval1 t2 ctx in
       TmApp (v1, t2')
 
     (* E-App1: evaluate function before argument *)
   | TmApp (t1, t2) ->
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
       TmApp (t1', t2)
 
     (* E-LetV *)
@@ -415,7 +415,7 @@ let rec eval1 tm = match tm with
 
     (* E-Let *)
   | TmLetIn(x, t1, t2) ->
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
       TmLetIn (x, t1', t2) 
   
     (*E-FixBeta*)
@@ -424,7 +424,7 @@ let rec eval1 tm = match tm with
 
     (*E-Fix*)
   | TmFix t1 ->
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
       TmFix t1'
   
     (*E-Concat*)
@@ -433,16 +433,16 @@ let rec eval1 tm = match tm with
 
     (*E-Concat: first argument is a term*)
   | TmConcat (t1, t2) when isval t2->
-      let t1' = (eval1 t1) in
+      let t1' = (eval1 t1 ctx) in
       TmConcat(t1', t2)
 
     (*E-Concat: second argument is a term*)
   | TmConcat (t1, t2) when isval t1->
-      let t2' = (eval1 t2) in
+      let t2' = (eval1 t2 ctx) in
       TmConcat(t1, t2')
 
   | TmConcat (t1, t2) ->
-      let t1' = (eval1 t1) in
+      let t1' = (eval1 t1 ctx) in
       TmConcat(t1', t2)
 
   | TmProj(v1, v2, pos) when isval v1 && isval v2 ->
@@ -452,8 +452,8 @@ let rec eval1 tm = match tm with
         v2
     (*E-Proj1*)
   | TmProj(t1, t2, pos) ->
-      let t1' = (eval1 t1) in
-      let t2' = (eval1 t2) in
+      let t1' = (eval1 t1 ctx) in
+      let t2' = (eval1 t2 ctx) in
         if (pos == 1) then
           t1'
         else
@@ -461,22 +461,28 @@ let rec eval1 tm = match tm with
 
     (*E-Pair2*)
   | TmPair (v1, t2) when isval v1 -> 
-    let t2' = eval1 t2 in
+    let t2' = eval1 t2 ctx in
       TmPair (v1, t2')
 
     (*E-Pair1*)
   | TmPair (t1, v2) -> 
-      let t1' = eval1 t1 in
+      let t1' = eval1 t1 ctx in
         TmPair (t1', v2)
     
+    (* E-Var *)
+  | TmVar x ->
+    (match (getvbinding ctx x) with
+      Some t -> t
+      | _ -> raise (Type_error ("no binding value for variable " ^ x)))
+
   | _ ->
       raise NoRuleApplies
 ;;
 
-let rec eval tm =
+let rec eval tm context =
   try
-    let tm' = eval1 tm in
-    eval tm'
+    let tm' = eval1 tm context in
+    eval tm' context
   with
     NoRuleApplies -> tm
 ;;
@@ -484,12 +490,12 @@ let rec eval tm =
 let execute ctx command = match command with
     Eval t -> 
               let tyTm = typeof ctx t in
-              let tm = eval t in
+              let tm = eval t ctx in
               print_endline (string_of_term tm ^ " : " ^ string_of_ty tyTm);
               addtbinding ctx (string_of_term t) tyTm
   | Bind (s, t) -> 
               let tyTm = typeof ctx t in
-              let tm = eval t in
+              let tm = eval t ctx in
               print_endline (string_of_term tm ^ " : " ^ string_of_ty tyTm);
               addvbinding ctx s tyTm (Some tm)
 ;;

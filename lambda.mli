@@ -61,6 +61,6 @@ val typeof : context -> term -> ty;;
 
 val string_of_term : term -> string;;
 exception NoRuleApplies;;
-val eval : term -> term;;
+val eval : term -> context -> term;;
 
 val execute: context -> command -> context;;
