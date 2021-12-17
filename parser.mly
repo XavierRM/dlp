@@ -62,7 +62,7 @@ term :
       { TmConcat ($2, $4) }
   | LBRACKET term COMMA term RBRACKET
       { TmPair ($2, $4) }
-  | LBRACKET term COMMA term RBRACKET DOT STRV
+  | LBRACKET term COMMA term RBRACKET DOT INTV
       { TmProj ($2, $4, $7) }
     /*NO tiene en cuenta variables y funciones, cambiar esto a un nuevo Tm*/
   | STRINGV EQ term

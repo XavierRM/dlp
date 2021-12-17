@@ -26,7 +26,7 @@ type term =
   | TmString of string
   | TmConcat of term * term
   | TmPair of term * term
-  | TmProj of term * term * string
+  | TmProj of term * term * int
   | TmBind of string * term
   | TmSucc of term
   | TmPred of term

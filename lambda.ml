@@ -17,7 +17,7 @@ type term =
   | TmString of string
   | TmConcat of term * term
   | TmPair of term * term
-  | TmProj of term * term * string
+  | TmProj of term * term * int
   | TmBind of string * term
   | TmSucc of term
   | TmPred of term
@@ -127,7 +127,7 @@ let rec typeof ctx tm = match tm with
   
     (*T-Proj*)
   | TmProj (t1, t2, pos) ->
-      if (pos == "1") then
+      if (pos == 1) then
         (typeof ctx t1)
       else
         (typeof ctx t2) 
@@ -209,7 +209,7 @@ let rec string_of_term = function
   | TmPair (p1, p2) -> 
       "{" ^ string_of_term p1 ^ "," ^ string_of_term p2 ^ "}"
   | TmProj (t1, t2, pos) -> 
-      "{" ^ string_of_term t1 ^ "," ^ string_of_term t2 ^ "}." ^ pos
+      "{" ^ string_of_term t1 ^ "," ^ string_of_term t2 ^ "}." ^ string_of_int pos
   | TmBind (s, t) ->
       s ^ " = " ^ string_of_term t
   | TmSucc t ->
@@ -445,12 +445,19 @@ let rec eval1 tm = match tm with
       let t1' = (eval1 t1) in
       TmConcat(t1', t2)
 
+  | TmProj(v1, v2, pos) when isval v1 && isval v2 ->
+      if (pos == 1) then
+        (print_endline("Primera posicion");
+        v1)
+      else
+        v2
     (*E-Proj1*)
   | TmProj(t1, t2, pos) ->
       let t1' = (eval1 t1) in
       let t2' = (eval1 t2) in
-        if (pos == "1") then
-          t1'
+        if (pos == 1) then
+          (print_endline("Primera posicion");
+          t1')
         else
           t2'
 
