@@ -39,6 +39,7 @@ type command =
 
 (* AUXILIAR OPERATIONS*)
 
+(*The "assoc" operation is in charge of returning the las two elements of a trio list given a reference, in this case the first element of the trio*)
 let rec assoc x = function
   [] -> raise Not_found
   | (a,b,c)::l -> if compare a x = 0 then (b, c) else assoc x l
@@ -68,7 +69,6 @@ let getvbinding ctx x =
 
 
 (* TYPE MANAGEMENT (TYPING) *)
-(*TyArr hace referencia a Arrow, es decir, la forma de representacion de las funciones, concretamente de los tipos de la entrada y salida de una funcion*)
 
 let rec string_of_ty ty = match ty with
     TyBool ->
@@ -83,10 +83,9 @@ let rec string_of_ty ty = match ty with
       "(" ^ string_of_ty ty1 ^ ")" ^ " -> " ^ "(" ^ string_of_ty ty2 ^ ")"
 ;;
 
-(*El pretty printer sera relacionado a tratar de hacer que este string tenga el menor numero de parentesis, es decir, tratar de minimizar el numero de parentesis
-que aparecen*)
-
 exception Type_error of string
+;;
+exception Variable_not_found_error of string
 ;;
 
 let rec typeof ctx tm = match tm with
@@ -111,9 +110,11 @@ let rec typeof ctx tm = match tm with
   | TmZero ->
       TyNat
 
+    (* T-String *)
   | TmString s1 ->
       TyString
 
+    (* T-Concat *)
   | TmConcat (s1, s2) -> 
       if (typeof ctx s1 = TyString) then
         if (typeof ctx s2 = TyString) then
@@ -121,11 +122,11 @@ let rec typeof ctx tm = match tm with
         else raise (Type_error "second argument of concat is not a string")
       else raise (Type_error "first argument of concat is not a string") 
 
-    (*T-Pair*)
+    (* T-Pair *)
   | TmPair (p1, p2) ->
       TyPair ((typeof ctx p1), (typeof ctx p2))
   
-    (*T-Proj*)
+    (* T-Proj *)
   | TmProj (t1, t2, pos) ->
       if (pos == 1) then
         (typeof ctx t1)
@@ -177,7 +178,7 @@ let rec typeof ctx tm = match tm with
       let ctx' = addtbinding ctx x tyT1 in
       typeof ctx' t2
   
-    (*T-Fix*)
+    (* T-Fix *)
   | TmFix t1 ->
       let tyT1 = typeof ctx t1 in
       (match tyT1 with
@@ -201,7 +202,6 @@ let rec string_of_term = function
       " else " ^ "(" ^ string_of_term t3 ^ ")"
   | TmZero ->
       "0"
-      (*Añadir las comillas*)
   | TmString s ->
       "\"" ^ s ^ "\""
   | TmConcat (t1, t2) ->
@@ -261,7 +261,7 @@ let rec free_vars tm = match tm with
       lunion (free_vars p1) (free_vars p2)
   | TmProj (t1, t2, pos) ->
       lunion (free_vars t1) (free_vars t2)
-  |TmBind (s, t) ->
+  | TmBind (s, t) ->
       free_vars t
   | TmSucc t ->
       free_vars t
@@ -418,39 +418,42 @@ let rec eval1 tm ctx = match tm with
       let t1' = eval1 t1 ctx in
       TmLetIn (x, t1', t2) 
   
-    (*E-FixBeta*)
+    (* E-FixBeta *)
   | TmFix (TmAbs (x, _, t12)) ->
       subst x tm t12
 
-    (*E-Fix*)
+    (* E-Fix *)
   | TmFix t1 ->
       let t1' = eval1 t1 ctx in
       TmFix t1'
   
-    (*E-Concat*)
+    (* E-Concat *)
   | TmConcat (s1, s2) when (isval s1) && (isval s2) ->
       TmString ((string_of_term s1) ^ (string_of_term s2))
 
-    (*E-Concat: first argument is a term*)
+    (* E-Concat: first argument is a term *)
   | TmConcat (t1, t2) when isval t2->
       let t1' = (eval1 t1 ctx) in
       TmConcat(t1', t2)
 
-    (*E-Concat: second argument is a term*)
+    (* E-Concat: second argument is a term *)
   | TmConcat (t1, t2) when isval t1->
       let t2' = (eval1 t2 ctx) in
       TmConcat(t1, t2')
 
+    (* E-Concat: if both arguments are terms we evaluate the first one first *)
   | TmConcat (t1, t2) ->
       let t1' = (eval1 t1 ctx) in
       TmConcat(t1', t2)
 
+    (* E-Proj: both arguments are values *)
   | TmProj(v1, v2, pos) when isval v1 && isval v2 ->
       if (pos == 1) then
         v1
       else
         v2
-    (*E-Proj1*)
+
+    (* E-Proj1/2: we mix both rules on one with the if statement *)
   | TmProj(t1, t2, pos) ->
       let t1' = (eval1 t1 ctx) in
       let t2' = (eval1 t2 ctx) in
@@ -459,12 +462,12 @@ let rec eval1 tm ctx = match tm with
         else
           t2'
 
-    (*E-Pair2*)
+    (* E-Pair2 *)
   | TmPair (v1, t2) when isval v1 -> 
     let t2' = eval1 t2 ctx in
       TmPair (v1, t2')
 
-    (*E-Pair1*)
+    (* E-Pair1 *)
   | TmPair (t1, v2) -> 
       let t1' = eval1 t1 ctx in
         TmPair (t1', v2)
@@ -473,7 +476,7 @@ let rec eval1 tm ctx = match tm with
   | TmVar x ->
     (match (getvbinding ctx x) with
       Some t -> t
-      | _ -> raise (Type_error ("no binding value for variable " ^ x)))
+      | _ -> raise (Variable_not_found_error ("no binding value for variable " ^ x)))
 
   | _ ->
       raise NoRuleApplies
@@ -487,6 +490,7 @@ let rec eval tm context =
     NoRuleApplies -> tm
 ;;
 
+(*This function is now in charge of processing the user inputs depending on if we want to add a new variable or evaluate a term*)
 let execute ctx command = match command with
     Eval t -> 
               let tyTm = typeof ctx t in

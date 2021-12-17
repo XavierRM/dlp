@@ -7,17 +7,6 @@ type ty =
   | TyArr of ty * ty
 ;;
 
-(*type context =
-  (string * ty) list
-;;
-
-Si te dan Eval haces una evaluacion como antes y devuelves el mismo contexto
-Si te dan un Bind entonces añades lo necesario al contexto y devuelves el mismo contexto
-
-*)
-
-
-
 type term =
     TmTrue
   | TmFalse
@@ -52,8 +41,6 @@ val addtbinding : context -> string -> ty -> context;;
 val gettbinding : context -> string -> ty;;
 val addvbinding : context -> string -> ty -> term option -> context;;
 val getvbinding : context -> string -> term option;;
-
-(*Añadir las operaciones para coger el tipo y para coger el valor*)
 
 val string_of_ty : ty -> string;;
 exception Type_error of string;;

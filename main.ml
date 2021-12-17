@@ -32,20 +32,11 @@ let top_level_loop () =
     if (Array.length Sys.argv) > 1 then
       raise (Type_error "Invalid number of arguments");*)
 
-  (*Tener en cuenta en loop el nuevo contexto de terminos tambien*)
-
   let rec loop ctx =
     print_string ">> ";
     flush stdout;
     try
       let tm = s token (from_string (read_line_semicolon ())) in
-      (*let tyTm = match tm with
-                  Eval t -> typeof ctx t
-                | Bind (s, t) -> typeof ctx t
-      in
-      match tm with
-          Eval t -> print_endline (string_of_term (eval t) ^ " : " ^ string_of_ty tyTm);
-        | Bind (s, t) -> print_endline (string_of_term (eval t) ^ " : " ^ string_of_ty tyTm);*)
       loop (execute ctx tm)
     with
        Lexical_error ->
