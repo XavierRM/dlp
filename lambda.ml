@@ -447,8 +447,7 @@ let rec eval1 tm = match tm with
 
   | TmProj(v1, v2, pos) when isval v1 && isval v2 ->
       if (pos == 1) then
-        (print_endline("Primera posicion");
-        v1)
+        v1
       else
         v2
     (*E-Proj1*)
@@ -456,8 +455,7 @@ let rec eval1 tm = match tm with
       let t1' = (eval1 t1) in
       let t2' = (eval1 t2) in
         if (pos == 1) then
-          (print_endline("Primera posicion");
-          t1')
+          t1'
         else
           t2'
 
@@ -489,5 +487,9 @@ let execute ctx command = match command with
               let tm = eval t in
               print_endline (string_of_term tm ^ " : " ^ string_of_ty tyTm);
               addtbinding ctx (string_of_term t) tyTm
-  | Bind (s, t) -> addvbinding ctx s (typeof ctx t) (Some t)
+  | Bind (s, t) -> 
+              let tyTm = typeof ctx t in
+              let tm = eval t in
+              print_endline (string_of_term tm ^ " : " ^ string_of_ty tyTm);
+              addvbinding ctx s tyTm (Some tm)
 ;;
