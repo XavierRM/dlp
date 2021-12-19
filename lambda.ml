@@ -496,16 +496,37 @@ let rec eval tm context =
     NoRuleApplies -> tm
 ;;
 
+let apply_ctx ctx tm = 
+  let rec apply_ctx_aux ctx tm ligadas =
+    match tm with
+        TmLetIn (x, t1, t2) ->
+          TmLetIn (x, apply_ctx_aux ctx t1 (x::ligadas), t2)
+      | TmAbs (y, tyY, t) ->
+          TmAbs (y, tyY, apply_ctx_aux ctx t (y::ligadas))
+      | TmVar t1 ->
+          if (List.exists (function a -> a = t1) ligadas) then
+              TmVar t1
+          else
+              (match (getvbinding ctx t1) with
+                  Some t -> t
+                | None -> raise (Variable_not_found_error ("no binding value for variable " ^ t1)))
+      
+      | _ -> tm
+
+  in apply_ctx_aux ctx tm [];;
+
 (*This function is now in charge of processing the user inputs depending on if we want to add a new variable or evaluate a term*)
 let execute ctx command = match command with
     Eval t -> 
               let tyTm = typeof ctx t in
               let tm = eval t ctx in
-              print_endline (string_of_term tm ^ " : " ^ string_of_ty tyTm);
+              let tm' = apply_ctx ctx tm in
+              print_endline (string_of_term tm' ^ " : " ^ string_of_ty tyTm);
               addtbinding ctx (string_of_term t) tyTm
   | Bind (s, t) -> 
               let tyTm = typeof ctx t in
               let tm = eval t ctx in
-              print_endline (string_of_term tm ^ " : " ^ string_of_ty tyTm);
-              addvbinding ctx s tyTm (Some tm)
+              let tm' = apply_ctx ctx tm in
+              print_endline (string_of_term tm' ^ " : " ^ string_of_ty tyTm);
+              addvbinding ctx s tyTm (Some tm')
 ;;

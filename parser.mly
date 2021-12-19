@@ -58,8 +58,6 @@ term :
       { TmPair ($2, $4) }
   | LBRACKET term COMMA term RBRACKET DOT INTV
       { TmProj ($2, $4, $7) }
-  | term DOT INTV
-      { TmProj ($2, $4, $7) }
   | STRINGV EQ term
       { TmBind ($1, $3) }
   | LAMBDA STRINGV COLON ty DOT term
