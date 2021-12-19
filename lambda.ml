@@ -131,7 +131,10 @@ let rec typeof ctx tm = match tm with
       if (pos == 1) then
         (typeof ctx t1)
       else
-        (typeof ctx t2) 
+        if (pos == 2) then
+          (typeof ctx t2) 
+        else
+          raise (Type_error "pairs only have to possible positions")
 
   | TmBind (s, t) ->
       let ctx' = addvbinding ctx s (typeof ctx t) (Some t) in (typeof ctx' t) 
@@ -203,7 +206,7 @@ let rec string_of_term = function
   | TmZero ->
       "0"
   | TmString s ->
-      "\"" ^ s ^ "\""
+      s
   | TmConcat (t1, t2) ->
       "concat (" ^ string_of_term t1 ^ ", " ^ string_of_term t2 ^ ")"
   | TmPair (p1, p2) -> 
@@ -460,7 +463,10 @@ let rec eval1 tm ctx = match tm with
         if (pos == 1) then
           t1'
         else
-          t2'
+          if (pos == 2) then
+            t2'
+          else
+            raise (Type_error "pairs only have to possible positions")
 
     (* E-Pair2 *)
   | TmPair (v1, t2) when isval v1 -> 
