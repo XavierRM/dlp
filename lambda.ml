@@ -346,6 +346,7 @@ let rec isval tm = match tm with
   | TmFalse -> true
   | TmString _ -> true
   | TmAbs _ -> true
+  | TmPair (_,_) -> true
   | t when isnumericval t -> true
   | _ -> false
 ;;
